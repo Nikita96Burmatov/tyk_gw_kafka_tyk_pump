@@ -1,0 +1,133 @@
+version: '3'
+
+services:
+  tyk-gateway:
+    image: tyk:devel
+    container_name: tyk-gateway
+    ports:
+     - "8080:8080"  
+    networks:
+      - ais
+    volumes:
+      - ./tyk/tyk.conf:/opt/tyk-gateway/tyk.conf
+      - ./tyk/apps:/opt/tyk-gateway/apps
+
+  zookeeper:
+    image: zookeeper:latest
+    container_name: zookeeper
+    networks:
+        - ais
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 4000
+    ports:
+      - "22181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    hostname: kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - ais
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    networks:
+      - ais
+    container_name: kafka-ui
+    ports:
+      - "8090:8080"
+    restart: always
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    links:
+      - kafka
+      - zookeeper
+
+  tyk-redis:
+    image: redis:alpine
+    container_name: redis
+    hostname: tyk-redis
+    ports:
+     - "6379:6379"
+    networks:
+      - ais
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+
+  tyk-pump:
+    image: tyk-pump:devel
+    container_name: tyk-pump
+    extra_hosts: 
+      - "host.docker.internal:172.17.0.1"
+    networks:
+      - ais
+    ports:
+      - 8083:8083
+      - 9084:9084
+    # environment:
+    #   - TYK_PMP_ANALYTICSSTORAGECONFIG_TYPE=redis
+    #   - TYK_PMP_ANALYTICSSTORAGECONFIG_HOST=tyk-redis
+    #   - TYK_PMP_ANALYTICSSTORAGECONFIG_PORT=6379
+    #   - TYK_PMP_ANALYTICSSTORAGECONFIG_PASSWORD=b2piK39zCCP7Wqh
+    #   - TYK_PMP_PUMPS_PROMETHEUS_TYPE=prometheus
+    #   - TYK_PMP_PUMPS_PROMETHEUS_META_ADDR=prometheus:9090
+    #   - TYK_PMP_PUMPS_PROMETHEUS_META_PATH=/metrics
+    volumes:
+      - ./tyk/pump.conf:/opt/tyk-pump/pump.conf
+      - ./tyk/analytics:/opt/tyk-pump/analytics
+
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+     - "8100:3100"
+    networks:
+      - ais
+
+  prometheus:
+    image: bitnami/prometheus:latest
+    container_name: prometheus
+    networks:
+      - ais
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      
+  grafana: 
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "8200:3000"
+    networks:
+      - ais
+  
+  ustub:
+    image: registry.cbitrix.com/ustub:latest
+    container_name: ustub.api
+    networks:
+      - ais
+    ports:
+      - 9999:9999
+    volumes:
+      - ./ustub/database.sqlite:/ustub/database.sqlite
+      - ./ustub/application.properties:/ustub/application.properties
+
+networks:
+  ais:
+
+# todo использовать env для передачи логинов и паролей

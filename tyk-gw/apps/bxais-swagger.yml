@@ -1,0 +1,141 @@
+openapi: 3.0.0
+info:
+  title: Tyk BxAis Kafka API
+  version: 5.3.0
+  description: |-
+    API Tyk Gateway — это средство интеграции вашего приложения с системой Tyk API Gateway. Он предназначен для автоматизации и интеграции.
+
+    Доступные сущности entity:
+    
+    * deal
+    * company
+    * contact
+
+servers:
+  - url: 'http://127.0.0.1:9000/kafka/v1/'
+tags:
+  - name: Kafka API
+    description: |-
+      crud operations with entities
+paths:
+  '/{entity}/create':
+    post:
+      description: |-
+        Создание сущности
+      tags:
+        - Kafka API
+      parameters:
+        - $ref: '#/components/parameters/Entity'
+      operationId: createEntity
+      responses:
+        '200':
+          description: API definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/apiStatusMessage"
+              example:
+                status: "success"
+                message: ""
+        '400':
+          description: API definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/apiStatusMessage"
+              example:
+                status: "error"
+                message: "This entity is not supported"
+  '/{entity}/update':
+    post:
+      description: |-
+        Обновление сущности
+      tags:
+        - Kafka API
+      parameters:
+        - $ref: '#/components/parameters/Entity'
+      operationId: updateEntity
+      responses:
+        '200':
+          description: API definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/apiStatusMessage"
+              example:
+                status: "success"
+                message: ""
+        '400':
+          description: API definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/apiStatusMessage"
+              example:
+                status: "error"
+                message: "This entity is not supported"
+  '/{entity}/delete':
+    post:
+      description: |-
+        Удаление сущности
+      tags:
+        - Kafka API
+      parameters:
+        - $ref: '#/components/parameters/Entity'
+      operationId: deleteEntity
+      responses:
+        '200':
+          description: API definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/apiStatusMessage"
+              example:
+                status: "success"
+                message: ""
+        '400':
+          description: API definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/apiStatusMessage"
+              example:
+                status: "error"
+                message: "This entity is not supported"
+
+components:
+  responses:
+    parameterBodies:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/apiStatusMessage'
+      description: parameterBodies
+  schemas:
+    apiStatusMessage:
+      description: apiStatusMessage represents an API status message
+      properties:
+        message:
+          description: Response details
+          type: string
+          x-go-name: Message
+        status:
+          type: string
+          x-go-name: Status
+      type: object
+      x-go-package: github.com/TykTechnologies/tyk
+  parameters:
+    Entity:
+      name: entity
+      schema:
+        type: string
+      description: Название сущности (deal, company, contact)
+      in: query
+      required: true
+  securitySchemes:
+    api_key:
+      in: header
+      name: X-Tyk-Authorization
+      type: apiKey
+security:
+  - api_key: []

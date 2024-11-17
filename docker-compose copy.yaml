@@ -1,0 +1,81 @@
+version: '3'
+
+services:
+  traefik:
+    image: traefik:latest
+    deploy:
+      replicas: 1
+    command:
+      #- "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8888:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./traefik/traefik.yml:/traefik.yml"
+  tyk:
+    image: tykio/tyk-gateway:latest
+    hostname: tyk-gateway
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tyk.rule=Host(`tyk-gateway.`)"
+      - "traefik.http.services.tyk.loadbalancer.server.port=80"
+    deploy:
+      replicas: 1
+    networks:
+      - bitrix
+    # volumes:
+    #   - ./tyk/tyk.conf:/opt/tyk-gateway/tyk.conf
+    #   - ./tyk/apps:/opt/tyk-gateway/apps
+    #   - ./tyk/middleware:/opt/tyk-gateway/middleware
+    environment:
+      TYK_GW_ENABLE_JSVM: true
+  tyk-pump:
+    image: tykio/tyk-pump-docker-pub:latest
+    hostname: tyk-pump
+    container_name: tyk-pump
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tyk-pump.rule=Host(`tyk-pump`)"
+      - "traefik.http.services.tyk-pump.loadbalancer.server.port=80"
+    networks:
+      - bitrix
+  tyk-redis:
+    image: registry.cbitrix.com/redis:alpine3.18
+    hostname: tyk-redis
+    container_name: redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tyk-redis.rule=Host(`tyk-redis`)"
+      - "traefik.http.services.tyk-redis.loadbalancer.server.port=80"
+    networks:
+      - bitrix
+  loki:
+    image: grafana/loki:latest
+    hostname: loki
+    container_name: loki
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.loki.rule=Host(`loki`)"
+      - "traefik.http.services.loki.loadbalancer.server.port=80"
+    networks:
+      - bitrix
+  prometheus:
+    image: bitnami/prometheus:latest
+    hostname: prometheus
+    container_name: prometheus
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.rule=Host(`prometheus`)"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=80"
+    networks:
+      - bitrix
+networks:
+  bitrix:
+    driver: bridge
+
+# todo использовать env для передачи логинов и паролей

@@ -1,0 +1,66 @@
+{
+  "name": "Tyk Ais Kafka API",
+  "api_id": "keyless",
+  "org_id": "default",
+  "definition": {
+    "location": "url"
+  },
+  "use_keyless": true,
+  "version_data": {
+    "not_versioned": false,
+    "versions": {
+      "v1": {
+        "name": "v1",
+        "expires": "",
+        "use_extended_paths": true,
+        "extended_paths": {
+          "white_list": [
+            {
+              "path": "/deal/create",
+              "method_actions": {
+                "POST": {
+                  "action": "no_action"
+                }
+              }
+            },
+            {
+              "path": "/deal/update",
+              "method_actions": {
+                "POST": {
+                  "action": "no_action",
+                  "code": 200
+                }
+              }
+            },
+            {
+              "path": "/deal/delete",
+              "method_actions": {
+                "POST": {
+                  "action": "no_action",
+                  "code": 200
+                }
+              }
+            }
+          ],
+          "transform_response": [
+            {
+              "path": "v12/{entity}/create",
+              "method": "POST",
+              "template_data": {
+                "template_mode": "file",
+                "template_source": "./templates/transform_test.tmpl",
+                "input_type": "json"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "driver": "otto",
+  "proxy": {
+    "listen_path": "/ais",
+    "target_url": "http://docker.loc/rest/1/yy87c8rx0ljhzy7n",
+    "strip_listen_path": true
+  }
+}
